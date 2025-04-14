@@ -38,6 +38,35 @@ def tool(fn: Callable):
         )
     return wrapper()
 
+def validate_arguments(tool_call: dict, tool_signature: dict) -> dict:
+    """
+    Validates and converts arguments in the input dictionary to match the expected types.
+
+    Args:
+        tool_call (dict): A dictionary containing the arguments passed to the tool.
+        tool_signature (dict): The expected function signature and parameter types.
+
+    Returns:
+        dict: The tool call dictionary with the arguments converted to the correct types if necessary.
+    """
+    properties = tool_signature["parameters"]["properties"]
+
+    # TODO: This is overly simplified but enough for simple Tools.
+    type_mapping = {
+        "int": int,
+        "str": str,
+        "bool": bool,
+        "float": float,
+    }
+
+    for arg_name, arg_value in tool_call["arguments"].items():
+        expected_type = properties[arg_name].get("type")
+
+        if not isinstance(arg_value, type_mapping[expected_type]):
+            tool_call["arguments"][arg_name] = type_mapping[expected_type](arg_value)
+
+    return tool_call
+
 if __name__ == '__main__':
     def dummy_function(name: str, lname: str):
         """This is just a dummy function"""
