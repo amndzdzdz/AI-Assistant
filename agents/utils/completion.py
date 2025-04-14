@@ -33,7 +33,8 @@ class InitializeChatHistory(list):
             messages (list | None): A list of initial messages
             total_length (int): The maximum number of messages the chat history can hold.
         """
-        super().__init__(messages, total_length)
+        super().__init__(messages)
+        self.total_length = total_length
 
     def append(self, msg: str):
         """Add a message to the queue. The first messaage will always stay fixed.
