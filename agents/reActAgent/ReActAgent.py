@@ -68,10 +68,11 @@ class ReActAgent:
         return str(chat_completion.choices[0].message.content)
 
     def bind_tools(self, tools: Union[Tool, list[Tool]]):
-        self.tools = tools if isinstance(tools, list) else [tools]
-        self.tools_dict = {
-            tool.name: tool for tool in self.tools
-        }
+        if tools:
+            self.tools = tools if isinstance(tools, list) else [tools]
+            self.tools_dict = {
+                tool.name: tool for tool in self.tools
+            }
 
     def _get_tool_signatures(self):
         return "".join([tool.fn_signature for tool in self.tools])
@@ -91,7 +92,7 @@ class ReActAgent:
 
             result = tool.run(**validated_tool_call["arguments"])
             print(Fore.GREEN + f"\nTool result: \n{result}")
-            print("HEllo")
+
             observations[validated_tool_call["id"]] = result
         
         return observations
