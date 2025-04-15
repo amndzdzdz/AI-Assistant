@@ -39,7 +39,7 @@ class ReflectionAgent:
 
         return self._model(reflection_history, verbose=verbose, log_title="REFLECTION", log_color=Fore.GREEN)
     
-    def invoke(self, message: str, n_iterations: int, verbose: int = 0):
+    def invoke(self, message: str, max_iterations: int, verbose: int = 0):
 
         generation_history = InitializeChatHistory([
             build_prompt_structure(prompt=self.generation_system_prompt, role="system"),
@@ -51,9 +51,9 @@ class ReflectionAgent:
 
         ], total_length=2)
 
-        for step in range(n_iterations):
+        for step in range(max_iterations):
             if verbose > 0:
-                fancy_step_tracker(step, n_iterations)
+                fancy_step_tracker(step, max_iterations)
 
             generation = self.generate(generation_history, verbose=verbose)
             generation_history.append(build_prompt_structure(prompt=generation, role="assistant"))
