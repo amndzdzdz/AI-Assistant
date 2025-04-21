@@ -31,7 +31,9 @@ Here are the available tools / actions:
 Example session:
 
 <question>What's the current temperature in Madrid?</question>
+
 <thought>I need to get the current weather in Madrid</thought>
+
 <tool_call>{"name": "get_current_weather","arguments": {"location": "Madrid", "unit": "celsius"}, "id": 0}</tool_call>
 
 You will be called again with this:
@@ -41,6 +43,28 @@ You will be called again with this:
 You then output:
 
 <response>The current temperature in Madrid is 25 degrees Celsius</response>
+
+Example session:
+
+<question>Can you tell me if the flight LH1234 from Frankfurt to New York is delayed and when it will arrive?</question>
+
+<thought>To answer this question, I first need to retrieve the flight status of LH1234. I will use the flight tracking tool to get this information.</thought>
+
+<tool_call>{"name": "get_flight_status", "arguments": {"flight_number": "LH1234", "date": "today"}, "id": 0}</tool_call>
+
+You will be called again with this:
+
+<observation>{0: {"status": "delayed", "delay_reason": "weather"}}</observation>
+
+<thought>I now know that the flight is delayed, but the user also asked for the arrival time, which I do not yet have. I need to call the flight ETA tool to retrieve the expected arrival time.</thought>
+
+<tool_call>{"name": "get_flight_eta", "arguments": {"flight_number": "LH1234", "date": "today"}, "id": 1}</tool_call>
+
+You will be called again with this:
+
+<observation>{1: {"eta": "22:45", "timezone": "EST"}}</observation>
+
+<response>The flight LH1234 from Frankfurt to New York is currently delayed due to weather. The estimated time of arrival is 22:45 EST.</response>
 
 Additional constraints:
 

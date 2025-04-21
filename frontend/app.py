@@ -21,11 +21,12 @@ if prompt := st.chat_input("What is up?"):
 
 
     response = post_prompt_to_backend(st.session_state.messages, config.get('BACKEND_API_URL'), image=None)
-
+    
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    #with st.chat_message("assistant"):
+    with st.chat_message("assistant"):
+        st.markdown(response.text)
 
     #   response = st.write_stream(api_response)
-    #st.session_state.messages.append({"role": "assistant", "content": response})
+    st.session_state.messages.append({"role": "assistant", "content": response.text})
