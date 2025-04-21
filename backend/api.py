@@ -9,4 +9,4 @@ class PromptPost(BaseModel):
 
 @api.post('/model/')
 def generate_inference(payload: PromptPost):
-    pass
+    return {"response": "This is just an example return!"}

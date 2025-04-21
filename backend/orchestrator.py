@@ -124,7 +124,6 @@ class Orchestrator:
             print(Fore.LIGHTYELLOW_EX + f"\n Orchestrator agent call dict: \n{validated_agent_call}")
 
             result = agent.run(**validated_agent_call["arguments"])
-            print(Fore.LIGHTYELLOW_EX + f"\nagent result: \n{result}")
 
             observations[validated_agent_call["id"]] = result
         
@@ -177,5 +176,5 @@ class Orchestrator:
 if __name__ == '__main__':
     orchestrator = Orchestrator()
     orchestrator.bind_agents([weather_agent, mail_agent])
-    response = orchestrator.invoke("Can you display my mails?")
+    response = orchestrator.invoke("Can you send the current temperature in beilngries, germany to my friend amin@gmx.de via mail?")
     print(response)
