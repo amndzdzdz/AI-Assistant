@@ -22,6 +22,7 @@ def weather_agent(task_description: str, context: str) -> str:
         tools=[get_weather, get_humidity]
     )
 
+    weather_agent.receive_context(context)
     output = weather_agent.run(context)
     return output
 
@@ -45,5 +46,6 @@ def mail_agent(task_description: str, context: str) -> str:
         tools=[get_mails, send_mail]
     )
 
+    mail_agent.receive_context(context)
     output = mail_agent.run(context)
     return output
