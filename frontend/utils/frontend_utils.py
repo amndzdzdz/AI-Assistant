@@ -6,6 +6,6 @@ def post_prompt_to_backend(chat_history: List[Dict], api_endpoint: str, image: O
         "chat_history": chat_history
     }
 
-    response = requests.post(api_endpoint, json = payload)
+    response = requests.post(api_endpoint+"/model/", json = payload)
 
     return response
