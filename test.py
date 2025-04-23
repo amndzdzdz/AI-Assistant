@@ -1,52 +1,47 @@
-from agents.reActAgent.ReActAgent import ReActAgent
-from agents.ToolAgent.tools import tool, Tool
-from agents.multi_agent_system.crew import Crew
-from agents.multi_agent_system.agent import Agent
-import math
+import datetime as dt
+import os.path
 
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 
-@tool
-def write_str_to_txt(string_data: str, txt_filename: str):
-    """
-    Writes a string to a txt file.
+SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
-    This function takes a string and writes it to a text file. If the file already exists, 
-    it will be overwritten with the new data.
+def main():
+    creds = None
+    
+    if os.path.exists("token.json"):
+        creds = Credentials.from_authorized_user_file("token.json")
 
-    Args:
-        string_data (str): The string containing the data to be written to the file.
-        txt_filename (str): The name of the text file to which the data should be written.
-    """
-    # Write the string data to the text file
-    with open(txt_filename, mode='w', encoding='utf-8') as file:
-        file.write(string_data)
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES)
+            creds = flow.run_local_server(port=0)
 
-    print(f"Data successfully written to {txt_filename}")
+        with open("token.json", "w") as token:
+            token.write(creds.to_json())
 
-if __name__ == '__main__':
-    with Crew() as crew:
-        agent_1 = Agent(
-            name="Poet Agent",
-            backstory="You are a well-known poet, who enjoys creating high quality poetry.",
-            task_description="Write a poem about the meaning of life",
-            task_expected_output="Just output the poem, without any title or introductory sentences",
-        )
+    try:
+        service = build("calendar", "v3", credentials=creds)
 
-        agent_2 = Agent(
-            name="Poem Translator Agent",
-            backstory="You are an expert translator especially skilled in Spanish",
-            task_description="Translate a poem into Spanish", 
-            task_expected_output="Just output the translated poem and nothing else"
-        )
+        now = dt.datetime.now().isoformat() + "Z"
 
-        agent_3 = Agent(
-            name="Writer Agent",
-            backstory="You are an expert transcriber, that loves writing poems into txt files",
-            task_description="You'll receive a Spanish poem in your context. You need to write the poem into './poem.txt' file",
-            task_expected_output="A txt file containing the greek poem received from the context",
-            tools=[write_str_to_txt],
-        )
+        event_result = service.events().list(calendarId="primary", timeMin=now, maxResults=10, singleEvents=True, orderBy="startTime").execute()
+        events = event_result.get("items", [])
 
-        agent_1 >> agent_2 >> agent_3
+        if not events:
+            print("No upcoming events")
+            return
+        
+        for event in events:
+            start = event["start"].get("dateTime", event["start"].get("date"))
+            print(start, event["summary"])
+    except HttpError as error:
+        print("An error occurred:", error)
 
-    crew.run()
+if __name__ == "__main__":
+    main()
