@@ -1,64 +1,42 @@
 from utils.tools_utils import tool
+import datetime as dt
+from datetime import timedelta
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+from utils.calendar_api_utils import initialize_creds
 
-@tool
-def get_weather(location: str, unit: str = "celsius") -> dict:
-    """
-    Retrieves the current temperature for the specified location.
+def get_upcoming_appointments(days_into_the_future: int):
 
-    Args:
-        location (str): The location to get the weather for.
-        unit (str): The temperature unit ('celsius' or 'fahrenheit').
+    creds = initialize_creds()
 
-    Returns:
-        dict: A dictionary containing the temperature and unit.
-    """
-    return {"temperature": 22, "unit": unit}
+    output_string = ""
 
+    try:
+        service = build("calendar", "v3", credentials=creds)
 
-@tool
-def get_humidity(location: str) -> dict:
-    """
-    Retrieves the current humidity percentage for the specified location.
+        now = dt.datetime.now()
+        end_time = (now + timedelta(days=days_into_the_future)).isoformat() + "Z"
+        now = now.isoformat() + "Z"
+        output_string += f"Today's time is: {now}\n"
 
-    Args:
-        location (str): The location to get humidity data for.
+        event_result = service.events().list(calendarId="primary", timeMin=now, timeMax=end_time, maxResults=100, singleEvents=True, orderBy="startTime").execute()
+        events = event_result.get("items", [])
 
-    Returns:
-        dict: A dictionary with the humidity percentage.
-    """
-    return {"humidity": 65}
+        if not events:
+            if days_into_the_future == 1:
+                output_string += "There are no appointments and meetings in the next day."
+            else:
+                output_string += f"In the next {days_into_the_future} days there are no appointments and meetings."
+            
+            return output_string
+        
+        for event in events:
+            start = event["start"].get("dateTime", event["start"].get("date"))
+            end = event["end"].get("dateTime", event["end"].get("date"))
+            output_string += f"Appointment name: {event["summary"]}, start: {start}, end: {end}\n"
+        return output_string
+    except HttpError as error:
+        print("An error occurred:", error)
 
-
-@tool
-def get_mails(limit: int = 5) -> dict:
-    """
-    Retrieves recent emails from the user's inbox.
-
-    Args:
-        limit (int): The number of emails to retrieve.
-
-    Returns:
-        dict: A dictionary containing a list of email summaries.
-    """
-    emails = [
-        {"from": "alice@example.com", "subject": "Meeting Reminder"},
-        {"from": "bob@example.com", "subject": "Project Update"},
-        {"from": "carol@example.com", "subject": "Invitation"},
-    ][:limit]
-    return {"emails": emails}
-
-
-@tool
-def send_mail(to: str, subject: str, body: str) -> dict:
-    """
-    Sends an email with the given subject and body to the specified recipient.
-
-    Args:
-        to (str): The recipient's email address.
-        subject (str): The subject line of the email.
-        body (str): The message body of the email.
-
-    Returns:
-        dict: A confirmation message indicating success.
-    """
-    return {"status": "sent", "to": to, "subject": subject}
+if __name__ == "__main__":
+    print(get_upcoming_appointments(days_into_the_future=5))
