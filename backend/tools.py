@@ -4,7 +4,7 @@ from datetime import timedelta
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from utils.calendar_api_utils import initialize_creds
-from typing import List, Union
+from typing import List, Union, Optional
 
 @tool
 def get_upcoming_appointments(days_into_the_future: int) -> str:
@@ -102,5 +102,58 @@ def delete_upcoming_appointments(appointmentIds: Union[str, List[str]]) -> str:
         print("An error occurred:", error)
         return "An error occurred while deleting appointments."
 
+#@tool
+def create_upcoming_appointment(
+    appointment_name: str,
+    appointment_description: Optional[str],
+    appointment_start_date: str,
+    appointment_end_date: str,
+    location: Optional[str]
+) -> str:
+    """
+    Creates a new appointment in the user's Google Calendar.
+
+    Parameters:
+        appointment_name (str): The title or summary of the appointment.
+        appointment_description (Optional[str]): An optional description of the appointment. Place an empty string if no further information is provided.
+        appointment_start_date (str): The start datetime in ISO 8601 format (e.g., '2025-04-24T14:00:00+02:00').
+        appointment_end_date (str): The end datetime in ISO 8601 format (e.g., '2025-04-24T16:00:00+02:00').
+        location (Optional[str]): An optional location for the appointment. Place an empty string if no further information is provided.
+
+    Returns:
+        str: A message confirming the appointment creation or reporting an error.
+    """
+
+    creds = initialize_creds()
+
+    try:
+        service = build("calendar", "v3", credentials=creds)
+
+        event = {
+            'summary': appointment_name,
+            'description': appointment_description,
+            'location': location,
+            'start': {
+                'dateTime': appointment_start_date
+            },
+            'end': {
+                'dateTime': appointment_end_date
+            },
+            'reminders': {
+                'useDefault': False,
+                'overrides': [
+                    {'method': 'email', 'minutes': 24 * 60},
+                    {'method': 'popup', 'minutes': 10},
+                ],
+            },
+        }
+
+        created_event = service.events().insert(calendarId='primary', body=event).execute()
+        return f"Appointment created successfully! View it here: {created_event.get('htmlLink')}"
+
+    except HttpError as error:
+        print("An error occurred:", error)
+        return "An error occurred while creating the appointment."
+
 if __name__ == "__main__":
-    print(delete_upcoming_appointments(appointmentIds=['fvqqturou0u4pg12ceshc4tjss', '9rnqiuk5iofo5v068i8a3j50c8']))
+    print(create_upcoming_appointment(appointment_name="test", appointment_description="THis is just a test desc", appointment_start_date="2025-04-24T14:00:00+02:00", appointment_end_date="2025-04-24T16:00:00+02:00"))
