@@ -6,6 +6,8 @@ from googleapiclient.errors import HttpError
 from utils.calendar_api_utils import initialize_creds
 from typing import List, Union, Optional
 
+##Calendar agent tools
+
 @tool
 def get_upcoming_appointments(days_into_the_future: int) -> str:
     """
@@ -206,8 +208,58 @@ def update_upcoming_appointment(
     except HttpError as error:
         print("An error occurred:", error)
         return "An error occurred while creating the appointment."
-    
 
+@tool
+def display_recent_emails(days_into_the_past: int) -> Optional[str]:
+    """
+    Displays the subject lines and thread IDs of recent emails in the Gmail account
+    based on the number of days provided.
+
+    Args:
+        days_into_the_past (int): The number of days in the past to search for emails.
+    
+    Returns:
+        Optional[str]: A string containing thread IDs and subjects of the emails. Returns None if no emails are found or an error occurs.
+    
+    Raises:
+        HttpError: If an error occurs while fetching email data from Gmail.
+    """
+    creds = initialize_creds()
+
+    out_string = ""
+
+    try:
+        query = f'category:primary newer_than:{days_into_the_past}d'
+        service = build("gmail", "v1", credentials=creds)
+        threads_result = service.users().threads().list(userId='me', q=query).execute()
+        threads = threads_result.get('threads', [])
+
+        for thread in threads:
+            thread_id = thread['id']
+            
+            # Get the full thread details
+            thread_data = service.users().threads().get(userId='me', id=thread_id).execute()
+            
+            # Get the first message in the thread
+            messages = thread_data.get('messages', [])
+            if messages:
+                first_message = messages[0]
+                
+                # Extract headers
+                headers = first_message['payload']['headers']
+                subject = next((h['value'] for h in headers if h['name'] == 'Subject'), '(No Subject)')
+                
+                out_string += f"Thread ID: {thread_id}, Subject: {subject} \n"
+
+        return out_string
+
+    except HttpError as error:
+        print(f"An error occurred: {error}")
+        return None
+
+# Send new mail
+# Read mail
+# Delete mail
 
 if __name__ == "__main__":
-    print(update_upcoming_appointment(appointment_id="6vjpfv0r7rf7cmdj978fjrrc70_20250429T110000Z"))
+    print(display_recent_emails(days_into_the_past=5))
