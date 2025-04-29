@@ -6,6 +6,8 @@ from googleapiclient.errors import HttpError
 from utils.calendar_api_utils import initialize_creds
 from typing import List, Union, Optional
 import base64
+from email.mime.text import MIMEText
+import os
 
 ##Calendar agent tools
 
@@ -257,6 +259,7 @@ def display_recent_emails(days_into_the_past: int) -> str:
         return None
 
 # Read mail
+@tool
 def read_mail(mail_id: str) -> str:
     """
     Retrieves and decodes the plain text content of an email from Gmail using its thread ID.
@@ -302,7 +305,34 @@ def read_mail(mail_id: str) -> str:
         return None
 
 # Send new mail
-# Delete mail
+def send_mail(message_text: str, to: str, subject: str) -> str:
+    """
+    Sends an email using the Gmail API.
+
+    Args:
+        message_text (str): The plain text content of the email message.
+        to (str): The recipient's email address.
+        subject (str): The subject line of the email.
+
+    Returns:
+        str: A response whether or not the tool call was successfull
+    """
+    message = MIMEText(message_text)
+    message['to'] = to
+    message['from'] = os.getenv("sender_mail")
+    message['subject'] = subject
+    raw = base64.urlsafe_b64encode(message.as_bytes())
+    raw = raw.decode()
+    body = {'raw': raw}
+    creds = initialize_creds()
+
+    try:
+        service = build("gmail", "v1", credentials=creds)
+        message = service.users().messages().send(userId="me", body=body).execute()
+        return "The email was successfully sent!"
+    except HttpError as error:
+        print('An error occurred: %s' % error)
+        return None
 
 if __name__ == "__main__":
-    print(read_mail(mail_id="1967d62771ad1f14"))
+    print(send_mail(message_text="test text", to="amin.dziri@gmx.de", sender="trewerpro@gmail.net", subject="Just a test2"))
