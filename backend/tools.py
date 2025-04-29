@@ -5,6 +5,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from utils.calendar_api_utils import initialize_creds
 from typing import List, Union, Optional
+import base64
 
 ##Calendar agent tools
 
@@ -210,7 +211,7 @@ def update_upcoming_appointment(
         return "An error occurred while creating the appointment."
 
 @tool
-def display_recent_emails(days_into_the_past: int) -> Optional[str]:
+def display_recent_emails(days_into_the_past: int) -> str:
     """
     Displays the subject lines and thread IDs of recent emails in the Gmail account
     based on the number of days provided.
@@ -219,10 +220,8 @@ def display_recent_emails(days_into_the_past: int) -> Optional[str]:
         days_into_the_past (int): The number of days in the past to search for emails.
     
     Returns:
-        Optional[str]: A string containing thread IDs and subjects of the emails. Returns None if no emails are found or an error occurs.
-    
-    Raises:
-        HttpError: If an error occurs while fetching email data from Gmail.
+        str: A string containing thread IDs and subjects of the emails. Returns None if no emails are found or an error occurs.
+
     """
     creds = initialize_creds()
 
@@ -257,9 +256,53 @@ def display_recent_emails(days_into_the_past: int) -> Optional[str]:
         print(f"An error occurred: {error}")
         return None
 
-# Send new mail
 # Read mail
+def read_mail(mail_id: str) -> str:
+    """
+    Retrieves and decodes the plain text content of an email from Gmail using its thread ID.
+
+    Args:
+        mail_id (str): The ID of the email thread to read.
+
+    Returns:
+        str: The decoded plain text body of the email, or None if an error occurs
+        or the body is not found.
+
+    """
+    creds = initialize_creds()
+
+    try:
+        service = build("gmail", "v1", credentials=creds)
+        threads_result = service.users().threads().list(userId='me', q="category:primary").execute()
+        threads = threads_result.get('threads', [])
+
+        mail = [thread for thread in threads if thread['id'] == mail_id][0]
+
+        thread_data = service.users().threads().get(userId='me', id=mail_id).execute()
+        
+        # Get the first message in the thread
+        message = thread_data.get('messages', [])[0]
+        payload = message.get('payload', {})
+        parts = payload.get('parts', [])
+
+        for part in parts:
+            if part['mimeType'] == 'text/plain':
+                body_data = part['body'].get('data')
+                if body_data:
+                    decoded_bytes = base64.urlsafe_b64decode(body_data.encode('UTF-8'))
+                    return decoded_bytes.decode('UTF-8')
+
+        if payload.get('mimeType') == 'text/plain' and 'data' in payload.get('body', {}):
+            body_data = payload['body']['data']
+            decoded_bytes = base64.urlsafe_b64decode(body_data.encode('UTF-8'))
+            return decoded_bytes.decode('UTF-8')
+
+    except HttpError as error:
+        print(f"An error occurred: {error}")
+        return None
+
+# Send new mail
 # Delete mail
 
 if __name__ == "__main__":
-    print(display_recent_emails(days_into_the_past=5))
+    print(read_mail(mail_id="1967d62771ad1f14"))
