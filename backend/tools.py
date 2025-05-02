@@ -333,6 +333,15 @@ def send_mail(message_text: str, to: str, subject: str) -> str:
     except HttpError as error:
         print('An error occurred: %s' % error)
         return None
+    
+def create_morning_breafing():
+    """
+    This function should say the following things:
+        - Any important emails from today?
+        - What are the tasks for today?
+        - Are there any todos that are for today?
+    """
+    pass
 
 if __name__ == "__main__":
     print(send_mail(message_text="test text", to="amin.dziri@gmx.de", sender="trewerpro@gmail.net", subject="Just a test2"))
