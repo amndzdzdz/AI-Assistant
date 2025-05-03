@@ -11,7 +11,7 @@ import os
 
 ##Calendar agent tools
 
-@tool
+#@tool
 def get_upcoming_appointments(days_into_the_future: int) -> str:
     """
     Fetches and formats upcoming Google Calendar appointments within a specified time range.
@@ -65,7 +65,7 @@ def get_upcoming_appointments(days_into_the_future: int) -> str:
         print("An error occurred:", error)
         return "An error occurred while retrieving appointments."
 
-@tool
+#@tool
 def delete_upcoming_appointments(appointment_ids: Union[str, List[str]]) -> str:
     """
     Deletes one or multiple upcoming Google Calendar appointments by their appointment ID(s).
@@ -107,7 +107,7 @@ def delete_upcoming_appointments(appointment_ids: Union[str, List[str]]) -> str:
         print("An error occurred:", error)
         return "An error occurred while deleting appointments."
 
-@tool
+#@tool
 def create_upcoming_appointment(
     appointment_name: str,
     appointment_description: Optional[str],
@@ -189,24 +189,42 @@ def update_upcoming_appointment(
         service = build("calendar", "v3", credentials=creds)
         event = service.events().get(calendarId="primary", eventId=appointment_id).execute()
 
-        appointment_name = event['name']
-        appointment_start_date = event['start']['dateTime'] + "Z"
-        appointment_end_date = event['end']['dateTime'] + "Z"
+        appointment_name = event['summary']
+        appointment_start_date = event['start']['dateTime']
+        appointment_end_date = event['end']['dateTime']
 
         if 'description' in event.keys():
             appointment_description = event['description']
         else:
-            appointment_description = False
+            appointment_description = ""
 
         if 'location' in event.keys():
             location = event['location']
         else:
-            location = False
+            location = ""
 
-        delete_upcoming_appointments(appointment_id=appointment_id)
+        if len(new_appointment_name) == 0:
+            new_appointment_name = appointment_name
 
-        create_upcoming_appointment(app)        
+        if len(new_appointment_description) == 0:
+            new_appointment_description = appointment_description
 
+        if len(new_appointment_start_date) == 0:
+            new_appointment_start_date = appointment_start_date
+
+        if len(new_appointment_end_date) == 0:
+            new_appointment_end_date = appointment_end_date
+
+        if len(new_location) == 0:
+            new_location = location
+
+        delete_upcoming_appointments(appointment_ids=appointment_id)
+
+        create_upcoming_appointment(appointment_name=new_appointment_name, 
+                                    appointment_description=new_appointment_description,
+                                    appointment_start_date=new_appointment_start_date,
+                                    appointment_end_date=new_appointment_end_date,
+                                    location=new_location)        
 
     except HttpError as error:
         print("An error occurred:", error)
@@ -344,4 +362,4 @@ def create_morning_breafing():
     pass
 
 if __name__ == "__main__":
-    print(send_mail(message_text="test text", to="amin.dziri@gmx.de", sender="trewerpro@gmail.net", subject="Just a test2"))
+    update_upcoming_appointment(appointment_id='aq6euegml32uk49rafk81m9rj0', new_appointment_name="Test 22", new_location="22th street of something")
