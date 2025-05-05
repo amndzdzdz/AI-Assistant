@@ -1,5 +1,5 @@
 import json
-from typing import Callable, Dict
+from typing import Callable, List, Union
 
 def get_fn_signature(fn: Callable):
     fn_signature = {
@@ -66,6 +66,57 @@ def validate_arguments(tool_call: dict, tool_signature: dict) -> dict:
             tool_call["arguments"][arg_name] = type_mapping[expected_type](arg_value)
 
     return tool_call
+
+def delete_appointment(appointment_ids: Union[str, List[str]], service):
+
+    if isinstance(appointment_ids, str):
+        service.events().delete(
+            calendarId="primary",
+            eventId=appointment_ids,
+            sendNotifications=False
+        ).execute()
+        return "Appointment successfully deleted!"
+
+    elif isinstance(appointment_ids, list):
+        for appointment_id in appointment_ids:
+            service.events().delete(
+                calendarId="primary",
+                eventId=appointment_id,
+                sendNotifications=False
+            ).execute()
+        return "Appointments successfully deleted!"
+
+    else:
+        return "Invalid input type. Please provide a string or list of strings."
+
+def create_appointment(appointment_name: str, 
+                       appointment_description: str, 
+                       appointment_start_date: str, 
+                       appointment_end_date: str,
+                       location: str,
+                       service):
+    event = {
+        'summary': appointment_name,
+        'description': appointment_description,
+        'location': location,
+        'start': {
+            'dateTime': appointment_start_date
+        },
+        'end': {
+            'dateTime': appointment_end_date
+        },
+        'reminders': {
+            'useDefault': False,
+            'overrides': [
+                {'method': 'email', 'minutes': 24 * 60},
+                {'method': 'popup', 'minutes': 10},
+            ],
+        },
+    }
+
+    created_event = service.events().insert(calendarId='primary', body=event).execute()
+    
+    return f"Appointment created successfully! View it here: {created_event.get('htmlLink')}"
 
 if __name__ == '__main__':
     def dummy_function(name: str, lname: str):

@@ -8,10 +8,9 @@ from typing import List, Union, Optional
 import base64
 from email.mime.text import MIMEText
 import os
+from utils.tools_utils import delete_appointment, create_appointment
 
-##Calendar agent tools
-
-#@tool
+@tool
 def get_upcoming_appointments(days_into_the_future: int) -> str:
     """
     Fetches and formats upcoming Google Calendar appointments within a specified time range.
@@ -65,7 +64,7 @@ def get_upcoming_appointments(days_into_the_future: int) -> str:
         print("An error occurred:", error)
         return "An error occurred while retrieving appointments."
 
-#@tool
+@tool
 def delete_upcoming_appointments(appointment_ids: Union[str, List[str]]) -> str:
     """
     Deletes one or multiple upcoming Google Calendar appointments by their appointment ID(s).
@@ -83,31 +82,15 @@ def delete_upcoming_appointments(appointment_ids: Union[str, List[str]]) -> str:
     try:
         service = build("calendar", "v3", credentials=creds)
 
-        if isinstance(appointment_ids, str):
-            service.events().delete(
-                calendarId="primary",
-                eventId=appointment_ids,
-                sendNotifications=False
-            ).execute()
-            return "Appointment successfully deleted!"
+        result = delete_appointment(appointment_ids= appointment_ids, service=service)
 
-        elif isinstance(appointment_ids, list):
-            for appointment_id in appointment_ids:
-                service.events().delete(
-                    calendarId="primary",
-                    eventId=appointment_id,
-                    sendNotifications=False
-                ).execute()
-            return "Appointments successfully deleted!"
-
-        else:
-            return "Invalid input type. Please provide a string or list of strings."
+        return result
 
     except HttpError as error:
         print("An error occurred:", error)
         return "An error occurred while deleting appointments."
 
-#@tool
+@tool
 def create_upcoming_appointment(
     appointment_name: str,
     appointment_description: Optional[str],
@@ -134,27 +117,14 @@ def create_upcoming_appointment(
     try:
         service = build("calendar", "v3", credentials=creds)
 
-        event = {
-            'summary': appointment_name,
-            'description': appointment_description,
-            'location': location,
-            'start': {
-                'dateTime': appointment_start_date
-            },
-            'end': {
-                'dateTime': appointment_end_date
-            },
-            'reminders': {
-                'useDefault': False,
-                'overrides': [
-                    {'method': 'email', 'minutes': 24 * 60},
-                    {'method': 'popup', 'minutes': 10},
-                ],
-            },
-        }
-
-        created_event = service.events().insert(calendarId='primary', body=event).execute()
-        return f"Appointment created successfully! View it here: {created_event.get('htmlLink')}"
+        result = create_appointment(appointment_name=appointment_name,
+                                    appointment_description=appointment_description,
+                                    appointment_start_date=appointment_start_date,
+                                    appointment_end_date=appointment_end_date,
+                                    location=location,
+                                    service=service)
+        
+        return result
 
     except HttpError as error:
         print("An error occurred:", error)
@@ -218,9 +188,9 @@ def update_upcoming_appointment(
         if len(new_location) == 0:
             new_location = location
 
-        delete_upcoming_appointments(appointment_ids=appointment_id)
+        delete_appointment(appointment_ids=appointment_id)
 
-        create_upcoming_appointment(appointment_name=new_appointment_name, 
+        create_appointment(appointment_name=new_appointment_name, 
                                     appointment_description=new_appointment_description,
                                     appointment_start_date=new_appointment_start_date,
                                     appointment_end_date=new_appointment_end_date,
@@ -358,6 +328,7 @@ def create_morning_breafing():
         - Any important emails from today?
         - What are the tasks for today?
         - Are there any todos that are for today?
+        - Add additional headlines of news what happens today
     """
     pass
 
