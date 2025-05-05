@@ -1,5 +1,7 @@
 import json
 from typing import Callable, List, Union
+import requests
+from bs4 import BeautifulSoup
 
 def get_fn_signature(fn: Callable):
     fn_signature = {
@@ -115,12 +117,29 @@ def create_appointment(appointment_name: str,
     }
 
     created_event = service.events().insert(calendarId='primary', body=event).execute()
-    
+
     return f"Appointment created successfully! View it here: {created_event.get('htmlLink')}"
 
-if __name__ == '__main__':
-    def dummy_function(name: str, lname: str):
-        """This is just a dummy function"""
-        return name + " " + lname
+def scrape_gmx_news():
+    url = "https://www.gmx.net/magazine/news/"
+
+    response = requests.get(url)
+
+    if response.status_code == 200:
+
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        headlines = soup.find_all(class_='teaser__headline')
+
+        out_string = "Headlines of today's news (german):\n"
+        for headline in headlines:
+            out_string += headline.text.strip() + "\n"
+
+        return out_string
     
-    dummy_function_tool = tool(dummy_function)
+    else:
+        print(f"Failed to fetch the page. Status code: {response.status_code}")
+
+if __name__ == '__main__':
+    
+    print(scrape_gmx_news())
