@@ -1,6 +1,5 @@
 from utils.tools_utils import tool
-import datetime as dt
-from datetime import timedelta
+
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from utils.calendar_api_utils import initialize_creds
@@ -8,7 +7,7 @@ from typing import List, Union, Optional
 import base64
 from email.mime.text import MIMEText
 import os
-from utils.tools_utils import delete_appointment, create_appointment
+from utils.tools_utils import delete_appointment, create_appointment, get_appointments, get_emails, scrape_gmx_news
 
 @tool
 def get_upcoming_appointments(days_into_the_future: int) -> str:
@@ -24,41 +23,13 @@ def get_upcoming_appointments(days_into_the_future: int) -> str:
     """
 
     creds = initialize_creds()
-    output_string = ""
 
     try:
         service = build("calendar", "v3", credentials=creds)
 
-        now = dt.datetime.now()
-        end_time = (now + timedelta(days=days_into_the_future)).isoformat() + "Z"
-        now = now.isoformat() + "Z"
-        output_string += f"Today's time is: {now}\n"
+        result = get_appointments(days_into_the_future, service)
 
-        event_result = service.events().list(
-            calendarId="primary",
-            timeMin=now,
-            timeMax=end_time,
-            maxResults=100,
-            singleEvents=True,
-            orderBy="startTime"
-        ).execute()
-
-        events = event_result.get("items", [])
-
-        if not events:
-            if days_into_the_future == 1:
-                output_string += "There are no appointments and meetings in the next day."
-            else:
-                output_string += f"In the next {days_into_the_future} days there are no appointments and meetings."
-            return output_string
-
-        for event in events:
-            start = event["start"].get("dateTime", event["start"].get("date"))
-            end = event["end"].get("dateTime", event["end"].get("date"))
-            id = event['id']
-            output_string += f"Appointment name: {event['summary']}, appointment_id: {id} start: {start}, end: {end}\n"
-
-        return output_string
+        return result
 
     except HttpError as error:
         print("An error occurred:", error)
@@ -129,8 +100,8 @@ def create_upcoming_appointment(
     except HttpError as error:
         print("An error occurred:", error)
         return "An error occurred while creating the appointment."
-    
-#@tool
+
+@tool
 def update_upcoming_appointment(
     appointment_id: str,
     new_appointment_name: Optional[str] = "",
@@ -215,32 +186,12 @@ def display_recent_emails(days_into_the_past: int) -> str:
     """
     creds = initialize_creds()
 
-    out_string = ""
-
     try:
-        query = f'category:primary newer_than:{days_into_the_past}d'
         service = build("gmail", "v1", credentials=creds)
-        threads_result = service.users().threads().list(userId='me', q=query).execute()
-        threads = threads_result.get('threads', [])
 
-        for thread in threads:
-            thread_id = thread['id']
-            
-            # Get the full thread details
-            thread_data = service.users().threads().get(userId='me', id=thread_id).execute()
-            
-            # Get the first message in the thread
-            messages = thread_data.get('messages', [])
-            if messages:
-                first_message = messages[0]
-                
-                # Extract headers
-                headers = first_message['payload']['headers']
-                subject = next((h['value'] for h in headers if h['name'] == 'Subject'), '(No Subject)')
-                
-                out_string += f"Thread ID: {thread_id}, Subject: {subject} \n"
+        result = get_emails(days_into_the_past, service)
 
-        return out_string
+        return result
 
     except HttpError as error:
         print(f"An error occurred: {error}")
@@ -321,15 +272,26 @@ def send_mail(message_text: str, to: str, subject: str) -> str:
     except HttpError as error:
         print('An error occurred: %s' % error)
         return None
-    
+
+@tool
 def create_morning_breafing():
     """
     This function should say the following things:
         - Any important emails from today?
-        - What are the tasks for today?
         - Are there any todos that are for today?
         - Add additional headlines of news what happens today
     """
+    creds = initialize_creds()
+
+    try:
+        mail_service = build("gmail", "v1", credentials=creds)
+        cal_service = build("calendar", "v3", credentials=creds)
+        emails = get_emails(days_into_the_past=3, service=mail_service)
+        appointments = get_appointments(days_into_the_future=1, service=cal_service)
+        news_headlines = scrape_gmx_news()
+    
+    except:
+        print("An error occured!")
     pass
 
 if __name__ == "__main__":

@@ -83,7 +83,8 @@ class ReActAgent:
         self.system_prompt = system_prompt
 
     def _model(self, history: list, verbose: int = 0, log_title: str = "COMPLETION", log_color: str = ""):
-        chat_completion = self.client.chat.completions.create(
+        
+        chat_completion = Groq.chat.completions.create(
             messages=history,
             model=self.model,
         )
