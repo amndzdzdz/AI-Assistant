@@ -244,6 +244,7 @@ def read_mail(mail_id: str) -> str:
         return None
 
 # Send new mail
+@tool
 def send_mail(message_text: str, to: str, subject: str) -> str:
     """
     Sends an email using the Gmail API.
@@ -274,12 +275,15 @@ def send_mail(message_text: str, to: str, subject: str) -> str:
         return None
 
 @tool
-def create_morning_breafing():
+def create_morning_briefing() -> str:
     """
-    This function should say the following things:
-        - Any important emails from today?
-        - Are there any todos that are for today?
-        - Add additional headlines of news what happens today
+    Generates a morning briefing containing:
+    - Recent important emails (from the past 3 days)
+    - Today's appointments and to-dos
+    - Headlines from today's news
+
+    Returns:
+        A formatted string with the summarized information.
     """
     creds = initialize_creds()
 
@@ -289,10 +293,23 @@ def create_morning_breafing():
         emails = get_emails(days_into_the_past=3, service=mail_service)
         appointments = get_appointments(days_into_the_future=1, service=cal_service)
         news_headlines = scrape_gmx_news()
+
+        return f"""
+        Relevant emails:
+        {emails}
+
+        Relevant appointments:
+        {appointments}
+
+        Relevant news headlines:
+        {news_headlines}
+        """
+    except Exception as e:
+        return f"Failed to generate morning briefing: {str(e)}"
     
     except:
         print("An error occured!")
-    pass
+    
 
 if __name__ == "__main__":
     update_upcoming_appointment(appointment_id='aq6euegml32uk49rafk81m9rj0', new_appointment_name="Test 22", new_location="22th street of something")
