@@ -155,7 +155,7 @@ def get_appointments(days_into_the_future: int, service):
 
     return output_string
 
-def get_emails(days_into_the_future: int, service):
+def get_emails(days_into_the_past: int, service):
 
         out_string = ""
         query = f'category:primary newer_than:{days_into_the_past}d'
@@ -184,24 +184,14 @@ def get_emails(days_into_the_future: int, service):
 
 def scrape_gmx_news():
     url = "https://www.gmx.net/magazine/news/"
-
     response = requests.get(url)
 
     if response.status_code == 200:
-
         soup = BeautifulSoup(response.text, 'html.parser')
-
         headlines = soup.find_all(class_='teaser__headline')
-
         out_string = "Headlines of today's news (german):\n"
         for headline in headlines:
             out_string += headline.text.strip() + "\n"
-
         return out_string
-    
     else:
         print(f"Failed to fetch the page. Status code: {response.status_code}")
-
-if __name__ == '__main__':
-    
-    print(scrape_gmx_news())

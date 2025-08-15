@@ -1,28 +1,10 @@
-def build_prompt_structure(prompt: str, role: str, tag: str = "") -> dict:
-    """
-    Builds a structured prompt that includes the role and content.
+import os
+from dotenv import load_dotenv
 
-    Args:
-        prompt (str): The actual content of the prompt.
-        role (str): The role of the speaker (e.g., user, assistant).
+from groq import Groq
 
-    Returns:
-        dict: A dictionary representing the structured prompt.
-    """
-    if tag:
-        prompt = f"<{tag}>{prompt}</{tag}>"
-    return {"role": role, "content": prompt}
+load_dotenv()
 
-def update_chat_history(history: list, msg: str, role: str):
-    """
-    Updates the chat history by appending the latest response.
-
-    Args:
-        history (list): The list representing the current chat history.
-        msg (str): The message to append.
-        role (str): The role type (e.g. 'user', 'assistant', 'system')
-    """
-    history.append(build_prompt_structure(prompt=msg, role=role))
 
 class ChatHistory(list):
     def __init__(self, messages: list | None = None, total_length: int = -1):
@@ -70,3 +52,38 @@ class InitializeChatHistory(ChatHistory):
             self.pop(1)
         super().append(msg)
 
+
+def build_prompt_structure(prompt: str, role: str, tag: str = "") -> dict:
+    """
+    Builds a structured prompt that includes the role and content.
+
+    Args:
+        prompt (str): The actual content of the prompt.
+        role (str): The role of the speaker (e.g., user, assistant).
+
+    Returns:
+        dict: A dictionary representing the structured prompt.
+    """
+    if tag:
+        prompt = f"<{tag}>{prompt}</{tag}>"
+    return {"role": role, "content": prompt}
+
+def update_chat_history(history: list, msg: str, role: str):
+    """
+    Updates the chat history by appending the latest response.
+
+    Args:
+        history (list): The list representing the current chat history.
+        msg (str): The message to append.
+        role (str): The role type (e.g. 'user', 'assistant', 'system')
+    """
+    history.append(build_prompt_structure(prompt=msg, role=role))
+
+def call_groq_api(message: str) -> str:
+    client = Groq(api_key=os.environ.get("groq_api_key"))    
+    chat_completion = client.chat.completions.create(
+        messages=[message],
+        model="llama3-70b-8192",
+    )
+    response = chat_completion.choices[0].message.content
+    return response

@@ -1,8 +1,8 @@
 from groq import Groq
 from typing import Union, Dict
 from utils.tools_utils import tool, Tool, validate_arguments
-from utils.completion import build_prompt_structure, ChatHistory
-from utils.extraction import extract_tag_content
+from utils.completion_utils import build_prompt_structure, ChatHistory
+from utils.extraction_utils import extract_tag_content
 from agents import weather_agent, mail_agent
 from utils.agent_utils import Agent
 from colorama import Fore

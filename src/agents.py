@@ -1,25 +1,25 @@
 from utils.agent_utils import Agent
 from utils.tools_utils import tool
-from tools import get_weather, get_humidity, get_mails, send_mail
+from tools import display_recent_emails, send_mail, read_mail, get_upcoming_appointments, delete_upcoming_appointments, update_upcoming_appointment, create_upcoming_appointment
 
 @tool
-def weather_agent(task_description: str, context: str) -> str:
+def calendar_agent(task_description: str, context: str) -> str:
     """
-    Weather agent that processes user weather-related prompts.
+    Calendar agent that processes user appointment-related prompts.
 
     Args:
         task_description (str): A description of the task that this agent needs to complete
         context (str): Additional context provided by previous agents.
 
     Returns:
-        str: A textual response containing the requested weather information.
+        str: A textual response containing the requested calendar information.
     """
     weather_agent = Agent(
-        name="Weather Agent",
-        backstory="You are a weatherman that can always tell what the current temperature is.",
+        name="Calendar Agent",
+        backstory="You are a Calendar Agent that can always handle user prompts related to calendar appointments",
         task_expected_output="Successfull return of what the user wanted",
         task_description=task_description,
-        tools=[get_weather, get_humidity]
+        tools=[get_upcoming_appointments, delete_upcoming_appointments, create_upcoming_appointment, update_upcoming_appointment]
     )
 
     weather_agent.receive_context(context)
@@ -43,7 +43,7 @@ def mail_agent(task_description: str, context: str) -> str:
         backstory="You are an efficient email assistant who can retrieve or send emails on behalf of the user.",
         task_description=task_description,
         task_expected_output="Successfull return of what the user wanted",
-        tools=[get_mails, send_mail]
+        tools=[display_recent_emails, send_mail, read_mail]
     )
 
     mail_agent.receive_context(context)
