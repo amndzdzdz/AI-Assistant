@@ -1,14 +1,16 @@
-from utils.tools_utils import tool, Tool, validate_arguments
-from textwrap import dedent
-
-from groq import Groq
-from typing import Union, Dict
-from utils.completion_utils import build_prompt_structure, ChatHistory
-from utils.extraction_utils import extract_tag_content
-from colorama import Fore
+from typing import Union
 import json
 import os
 
+from textwrap import dedent
+from groq import Groq
+from colorama import Fore
+
+from utils.completion_utils import build_prompt_structure, ChatHistory
+from utils.extraction_utils import extract_tag_content
+from utils.tools_utils import Tool, validate_arguments
+
+#Prompts set here because the project is not that big.
 BASE_SYSTEM_PROMPT = ""
 
 
@@ -73,17 +75,17 @@ Additional constraints:
 - If the user asks you something unrelated to any of the tools above, answer freely enclosing your answer with <response></response> tags.
 """
 
+
 class ReActAgent:
 
-    def __init__(self, model: str = "llama3-70b-8192", system_prompt: str = BASE_SYSTEM_PROMPT,):
+    def __init__(self, model: str = "llama3-70b-8192", system_prompt: str = BASE_SYSTEM_PROMPT) -> None:
         self.tools = None
         self.tools_dict = None
         self.model = model
         self.client = Groq(api_key=os.environ.get("groq_api_key"))
         self.system_prompt = system_prompt
 
-    def _model(self, history: list, verbose: int = 0, log_title: str = "COMPLETION", log_color: str = ""):
-        
+    def _model(self, history: list, verbose: int = 0, log_title: str = "COMPLETION", log_color: str = "") -> str:
         chat_completion = Groq.chat.completions.create(
             messages=history,
             model=self.model,
@@ -94,17 +96,17 @@ class ReActAgent:
 
         return str(chat_completion.choices[0].message.content)
 
-    def bind_tools(self, tools: Union[Tool, list[Tool]]):
+    def bind_tools(self, tools: Union[Tool, list[Tool]]) -> None:
         if tools:
             self.tools = tools if isinstance(tools, list) else [tools]
             self.tools_dict = {
                 tool.name: tool for tool in self.tools
             }
 
-    def _get_tool_signatures(self):
+    def _get_tool_signatures(self) -> str:
         return "".join([tool.fn_signature for tool in self.tools])
     
-    def process_tool_calls(self, tool_calls_content: list):
+    def process_tool_calls(self, tool_calls_content: list) -> str:
         observations = {}
 
         for tool_call_str in tool_calls_content:
@@ -121,10 +123,9 @@ class ReActAgent:
             print(Fore.GREEN + f"\nTool result: \n{result}")
 
             observations[validated_tool_call["id"]] = result
-        
         return observations
     
-    def invoke(self, message: str, max_iterations: int = 10):
+    def invoke(self, message: str, max_iterations: int = 10) -> str:
         user_prompt = build_prompt_structure(message, 'user', tag="question")
 
         if self.tools:
@@ -140,11 +141,8 @@ class ReActAgent:
         )
 
         if self.tools:
-            
             for _ in range(max_iterations):
-
                 completion = self._model(chat_history)
-
                 response = extract_tag_content(str(completion), "response")
 
                 if response.found:
@@ -165,7 +163,6 @@ class ReActAgent:
                     chat_history.append(
                         build_prompt_structure(f"{observations}", "user")
                     )
-
         return self._model(chat_history)
 
 class Agent:
@@ -188,10 +185,10 @@ class Agent:
         self.dependents: list[Agent] = []
         self.context = ""
         
-    def receive_context(self, input_data):
+    def receive_context(self, input_data) -> None:
         self.context += f"{self.name} received the following context: \n{input_data}"
 
-    def create_prompt(self):
+    def create_prompt(self) -> str:
         prompt = dedent(
             f"""
         You are an AI agent. You are part of a team of agents working together to complete a task.
@@ -221,7 +218,7 @@ class Agent:
 
         return prompt
     
-    def run(self, context: str):
+    def run(self, context: str) -> str:
         msg = self.create_prompt()
         self.react_agent.bind_tools(self.tools)
         output = self.react_agent.invoke(msg)

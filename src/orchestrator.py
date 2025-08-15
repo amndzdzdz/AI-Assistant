@@ -1,13 +1,15 @@
-from groq import Groq
-from typing import Union, Dict
-from utils.tools_utils import tool, Tool, validate_arguments
-from utils.completion_utils import build_prompt_structure, ChatHistory
-from utils.extraction_utils import extract_tag_content
-from agents import weather_agent, mail_agent
-from utils.agent_utils import Agent
+from typing import Union
 from colorama import Fore
 import json
 import os
+
+from groq import Groq
+
+from utils.tools_utils import validate_arguments
+from utils.completion_utils import build_prompt_structure, ChatHistory
+from utils.extraction_utils import extract_tag_content
+from utils.agent_utils import Agent
+
 
 BASE_SYSTEM_PROMPT = ""
 
@@ -75,7 +77,6 @@ I now know that the flight is delayed, but the user also asked for the arrival t
 The flight LH1234 from Frankfurt to New York is currently delayed due to weather. The estimated time of arrival is 22:45 EST.
 </response>
 
-
 If no agent is suitable for the question, respond freely within <response></response> tags.
 """
 
@@ -124,7 +125,6 @@ class Orchestrator:
             print(Fore.LIGHTYELLOW_EX + f"\n Orchestrator agent call dict: \n{validated_agent_call}")
 
             result = agent.run(**validated_agent_call["arguments"])
-
             observations[validated_agent_call["id"]] = result
         
         return observations
@@ -144,12 +144,9 @@ class Orchestrator:
             ]
         )
 
-        if self.agents:
-            
+        if self.agents:            
             for _ in range(max_iterations):
-
                 completion = self._model(chat_history)
-
                 response = extract_tag_content(str(completion), "response")
 
                 if response.found:
@@ -157,7 +154,6 @@ class Orchestrator:
                 
                 thought = extract_tag_content(str(completion), "thought")
                 agent_calls = extract_tag_content(str(completion), "agent_call")
-
                 chat_history.append(
                     build_prompt_structure(completion, "assistant")
                 )
@@ -170,11 +166,4 @@ class Orchestrator:
                     chat_history.append(
                         build_prompt_structure(f"{observations}", "user")
                     )
-
         return self._model(chat_history)
-    
-if __name__ == '__main__':
-    orchestrator = Orchestrator()
-    orchestrator.bind_agents([weather_agent, mail_agent])
-    response = orchestrator.invoke("Can you send the current temperature in beilngries, germany to my friend amin@gmx.de via mail?")
-    print(response)

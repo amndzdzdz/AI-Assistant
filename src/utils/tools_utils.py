@@ -5,19 +5,6 @@ import datetime as dt
 from datetime import timedelta
 from bs4 import BeautifulSoup
 
-def get_fn_signature(fn: Callable):
-    fn_signature = {
-        "name": fn.__name__,
-        "description": fn.__doc__,
-        "parameters": {
-            "properties": {}
-        }
-    }
-
-    schema = {k: {"type": v.__name__} for k, v in fn.__annotations__.items() if k != "return"}
-    fn_signature["parameters"]["properties"] = schema
-    return fn_signature
-
 
 class Tool:
     def __init__(self, name: str, fn: Callable, fn_signature: str):
@@ -30,7 +17,19 @@ class Tool:
     
     def run(self, **kwargs):
         return self.fn(**kwargs)
-    
+
+
+def get_fn_signature(fn: Callable):
+    fn_signature = {
+        "name": fn.__name__,
+        "description": fn.__doc__,
+        "parameters": {
+            "properties": {}
+        }
+    }
+    schema = {k: {"type": v.__name__} for k, v in fn.__annotations__.items() if k != "return"}
+    fn_signature["parameters"]["properties"] = schema
+    return fn_signature    
 
 def tool(fn: Callable):
     def wrapper():
@@ -62,17 +61,13 @@ def validate_arguments(tool_call: dict, tool_signature: dict) -> dict:
         "bool": bool,
         "float": float,
     }
-
     for arg_name, arg_value in tool_call["arguments"].items():
         expected_type = properties[arg_name].get("type")
-
         if not isinstance(arg_value, type_mapping[expected_type]):
             tool_call["arguments"][arg_name] = type_mapping[expected_type](arg_value)
-
     return tool_call
 
 def delete_appointment(appointment_ids: Union[str, List[str]], service):
-
     if isinstance(appointment_ids, str):
         service.events().delete(
             calendarId="primary",
@@ -80,7 +75,6 @@ def delete_appointment(appointment_ids: Union[str, List[str]], service):
             sendNotifications=False
         ).execute()
         return "Appointment successfully deleted!"
-
     elif isinstance(appointment_ids, list):
         for appointment_id in appointment_ids:
             service.events().delete(
@@ -89,7 +83,6 @@ def delete_appointment(appointment_ids: Union[str, List[str]], service):
                 sendNotifications=False
             ).execute()
         return "Appointments successfully deleted!"
-
     else:
         return "Invalid input type. Please provide a string or list of strings."
 
@@ -98,7 +91,7 @@ def create_appointment(appointment_name: str,
                        appointment_start_date: str, 
                        appointment_end_date: str,
                        location: str,
-                       service):
+                       service) -> str:
     event = {
         'summary': appointment_name,
         'description': appointment_description,
@@ -117,12 +110,10 @@ def create_appointment(appointment_name: str,
             ],
         },
     }
-
     created_event = service.events().insert(calendarId='primary', body=event).execute()
-
     return f"Appointment created successfully! View it here: {created_event.get('htmlLink')}"
 
-def get_appointments(days_into_the_future: int, service):
+def get_appointments(days_into_the_future: int, service) -> str:
     output_string = ""
     now = dt.datetime.now()
     end_time = (now + timedelta(days=days_into_the_future)).isoformat() + "Z"
@@ -156,33 +147,27 @@ def get_appointments(days_into_the_future: int, service):
     return output_string
 
 def get_emails(days_into_the_past: int, service):
-
         out_string = ""
         query = f'category:primary newer_than:{days_into_the_past}d'
-        
         threads_result = service.users().threads().list(userId='me', q=query).execute()
         threads = threads_result.get('threads', [])
 
         for thread in threads:
-            thread_id = thread['id']
-            
+            thread_id = thread['id']         
             # Get the full thread details
             thread_data = service.users().threads().get(userId='me', id=thread_id).execute()
-            
             # Get the first message in the thread
             messages = thread_data.get('messages', [])
+
             if messages:
                 first_message = messages[0]
-                
                 # Extract headers
                 headers = first_message['payload']['headers']
                 subject = next((h['value'] for h in headers if h['name'] == 'Subject'), '(No Subject)')
-                
                 out_string += f"Thread ID: {thread_id}, Subject: {subject} \n"
-
         return out_string
 
-def scrape_gmx_news():
+def scrape_gmx_news() -> str:
     url = "https://www.gmx.net/magazine/news/"
     response = requests.get(url)
 
@@ -190,6 +175,7 @@ def scrape_gmx_news():
         soup = BeautifulSoup(response.text, 'html.parser')
         headlines = soup.find_all(class_='teaser__headline')
         out_string = "Headlines of today's news (german):\n"
+
         for headline in headlines:
             out_string += headline.text.strip() + "\n"
         return out_string
