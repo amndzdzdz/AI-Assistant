@@ -19,17 +19,13 @@ class Tool:
         return self.fn(**kwargs)
 
 
-def get_fn_signature(fn: Callable):
+def get_fn_signature(tool):
     fn_signature = {
-        "name": fn.__name__,
-        "description": fn.__doc__,
-        "parameters": {
-            "properties": {}
-        }
+        "name": tool.name,
+        "description": tool.description,
+        "parameters": tool.inputSchema 
     }
-    schema = {k: {"type": v.__name__} for k, v in fn.__annotations__.items() if k != "return"}
-    fn_signature["parameters"]["properties"] = schema
-    return fn_signature    
+    return str(fn_signature)    
 
 def tool(fn: Callable):
     def wrapper():
