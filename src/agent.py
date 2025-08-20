@@ -5,12 +5,9 @@ import os
 
 from groq import Groq
 
-from utils.tools_utils import validate_arguments, get_fn_signature
+from utils.tools_utils import get_fn_signature
 from utils.completion_utils import build_prompt_structure, ChatHistory
 from utils.extraction_utils import extract_tag_content
-from utils.agent_utils import Agent
-from utils.tools_utils import Tool
-
 
 BASE_SYSTEM_PROMPT = ""
 
@@ -82,6 +79,8 @@ If no tool is suitable for the question, respond freely within <response></respo
 Please make sure NOT to include <response></response>-tags when you make an tool_call!!
 """
 
+#Additional agent wrapper class for multi agentic workflows
+#Makes creating more agents easier
 class Agent:
 
     def __init__(self, model: str = "llama3-70b-8192", system_prompt: str = BASE_SYSTEM_PROMPT,):
@@ -130,7 +129,7 @@ class Agent:
             tool_call = self._format_tool(tool_call)
             tool_name = tool_call["function"]["name"]
 
-            print(Fore.LIGHTYELLOW_EX + f"\Agent using tool: {tool_name}")
+            print(Fore.LIGHTYELLOW_EX + f"\Agent using tool: {tool_name} with arguments: {tool_call["function"]["parameters"]}")
 
             observation = await session.call_tool(
                 tool_call["function"]["name"],

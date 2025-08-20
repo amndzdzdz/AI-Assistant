@@ -1,11 +1,13 @@
 import os.path
+
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 
+from config_loader import config
+
 #Set manually because the project is not that big
-SCOPES = ["https://www.googleapis.com/auth/calendar",
-          "https://mail.google.com/"]
+SCOPES = config.get_google_scopes()
 
 def initialize_creds():
     creds = None

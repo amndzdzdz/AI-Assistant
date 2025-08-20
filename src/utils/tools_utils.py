@@ -3,7 +3,10 @@ from typing import Callable, List, Union
 import requests
 import datetime as dt
 from datetime import timedelta
+
 from bs4 import BeautifulSoup
+
+from utils.config_loader import config
 
 
 class Tool:
@@ -17,7 +20,6 @@ class Tool:
     
     def run(self, **kwargs):
         return self.fn(**kwargs)
-
 
 def get_fn_signature(tool):
     fn_signature = {
@@ -149,23 +151,20 @@ def get_emails(days_into_the_past: int, service):
         threads = threads_result.get('threads', [])
 
         for thread in threads:
-            thread_id = thread['id']         
-            # Get the full thread details
+            thread_id = thread['id']
             thread_data = service.users().threads().get(userId='me', id=thread_id).execute()
-            # Get the first message in the thread
             messages = thread_data.get('messages', [])
 
             if messages:
                 first_message = messages[0]
-                # Extract headers
                 headers = first_message['payload']['headers']
                 subject = next((h['value'] for h in headers if h['name'] == 'Subject'), '(No Subject)')
                 out_string += f"Thread ID: {thread_id}, Subject: {subject} \n"
         return out_string
 
-def scrape_gmx_news() -> str:
-    url = "https://www.gmx.net/magazine/news/"
-    response = requests.get(url)
+def scrape_news() -> str:
+    #I could definitely change from gmx news to something more serious haha
+    response = requests.get(config.get_news_endpoint())
 
     if response.status_code == 200:
         soup = BeautifulSoup(response.text, 'html.parser')

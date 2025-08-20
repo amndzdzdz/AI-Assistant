@@ -6,14 +6,14 @@ import streamlit as st
 from mcp import ClientSession
 from mcp.client.sse import sse_client
 from utils.config_loader import config
-from model import Agent
+from agent import Agent
 
 supervisor_agent = Agent()
-
+MCP_ENDPOINT = config.get_mcp_endpoint()
 nest_asyncio.apply()
 
 async def query_model(chat_history):
-    async with sse_client(url="http://127.0.0.1:8000/sse") as (read, write):
+    async with sse_client(url=MCP_ENDPOINT) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
             tools_result = await session.list_tools()
@@ -33,10 +33,10 @@ for message in st.session_state.messages:
 if prompt := st.chat_input("What is up?"):
     st.session_state.messages.append({"role": "user", "content": prompt, "image": ""})
 
-    response = asyncio.run(query_model(st.session_state.messages))
-    
     with st.chat_message("user"):
         st.markdown(prompt)
+
+    response = asyncio.run(query_model(st.session_state.messages))
 
     with st.chat_message("assistant"):
         st.markdown(response)

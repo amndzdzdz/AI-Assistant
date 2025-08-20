@@ -3,7 +3,7 @@ import yaml
 class ConfigLoader(object):
     _instance = None
 
-    def __new__(cls):
+    def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
@@ -12,12 +12,16 @@ class ConfigLoader(object):
         with open(config_path) as file:
             self._config = yaml.safe_load(file)
 
-    def get(self, key: str):
-        config = self._config
-        for config_key in config:
-            try:
-                return config[config_key][key]
-            except:
-                raise KeyError(f"The config does not contain the key '{key}'")
+    def get_mcp_endpoint(self):
+        return self._config["mcp"]["mcp_endpoint"]
+    
+    def get_news_endpoint(self):
+        return self._config["tools"]["news_endpoint"]
+    
+    def get_google_scopes(self):
+        return [
+            self._config["google_api"]["calendar_endpoint"],
+            self._config["google_api"]["gmail_endpoint"]
+        ]
             
-config = ConfigLoader(config_path="configs/config.yaml")
+config = ConfigLoader(config_path="config/config.yaml")

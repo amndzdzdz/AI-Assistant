@@ -1,0 +1,9 @@
+tools:
+  news_endpoint: "https://www.gmx.net/magazine/news/"
+
+mcp:
+  mcp_endpoint: "http://127.0.0.1:8000/sse"
+
+google_api:
+  calendar_endpoint: "https://www.googleapis.com/auth/calendar"
+  gmail_endpoint: "https://mail.google.com/"

@@ -12,8 +12,13 @@ from googleapiclient.errors import HttpError
 from email.mime.text import MIMEText
 
 from src.utils.completion_utils import call_groq_api
-from src.utils.calendar_api_utils import initialize_creds
-from src.utils.tools_utils import delete_appointment, create_appointment, get_appointments, get_emails, scrape_gmx_news
+from utils.google_api_utils import initialize_creds
+from src.utils.tools_utils import (
+    delete_appointment, 
+    create_appointment, 
+    get_appointments, 
+    get_emails, scrape_news
+)
 
 load_dotenv()
 
@@ -286,8 +291,8 @@ def create_morning_briefing() -> str:
         past_emails = get_emails(days_into_the_past=3, service=mail_service)
         future_appointments = get_appointments(days_into_the_future=1, service=calendar_service)
         #The news_headlines should be added to the prompt, 
-        #but I cant access more tokens due to my free tier.
-        news_headlines = scrape_gmx_news()
+        #but I cant access more tokens due to my free grok tier.
+        #news_headlines = scrape_news()
 
         prompt = dedent(f"""
         Past Emails:

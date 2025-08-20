@@ -30,7 +30,6 @@ class ChatHistory(list):
             self.pop(0)
         super().append(msg)
     
-
 class InitializeChatHistory(ChatHistory):
     def __init__(self, messages: list | None = None, total_length: int = -1):
         """Initialise the queue with a fixed total length.
@@ -51,7 +50,6 @@ class InitializeChatHistory(ChatHistory):
         if len(self) == self.total_length:
             self.pop(1)
         super().append(msg)
-
 
 def build_prompt_structure(prompt: str, role: str, tag: str = "") -> dict:
     """
